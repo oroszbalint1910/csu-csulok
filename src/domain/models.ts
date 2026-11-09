@@ -10,8 +10,9 @@ export interface CustomerDetails {fullName:string;phone:string;email:string;zone
 export type OrderStatus='awaiting_acceptance'|'accepted'|'preparing'|'ready'|'out_for_delivery'|'completed'|'rejected';
 export type Fulfillment='pickup'|'delivery';
 export type PaymentMethod='cash_on_receipt'|'card_on_receipt';
+export interface OrderHistoryEntry {status:OrderStatus;at:string;note?:string}
 export interface OrderItem {productId:string;quantity:number;nameSnapshot:string;unitPriceSnapshot:Money}
-export interface Order {id:string;idempotencyKey:string;createdAt:string;status:OrderStatus;items:OrderItem[];customer:CustomerDetails;fulfillment:Fulfillment;payment:PaymentMethod;subtotal:Money;deliveryFee:Money;total:Money;demo:true}
+export interface Order {id:string;idempotencyKey:string;createdAt:string;status:OrderStatus;items:OrderItem[];customer:CustomerDetails;fulfillment:Fulfillment;payment:PaymentMethod;subtotal:Money;deliveryFee:Money;total:Money;demo:true;history?:OrderHistoryEntry[];estimatedMinutes?:number}
 export interface RestaurantSettings {name:string;timezone:'Europe/Budapest';menuStartHour:number;menuEndHour:number;address?:string;phone?:string;openingHours?:string;orderingMode:'demo'}
 export interface Catalog {categories:Category[];products:Product[];weeklyMenu:WeeklyMenu;zones:DeliveryZone[];settings:RestaurantSettings}
 export interface OrderRequest {items:CartItem[];customer:CustomerDetails;fulfillment:Fulfillment;payment:PaymentMethod;idempotencyKey:string}

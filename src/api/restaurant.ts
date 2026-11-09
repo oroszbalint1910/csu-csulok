@@ -1,8 +1,11 @@
 import {demoCatalog} from '../data/catalog';
 import {quote,requestErrors} from '../domain/ordering';
-import type {Catalog,Order,OrderRequest} from '../domain/models';
-export interface RestaurantApi {getCatalog(now:Date):Promise<Catalog>;createDemoOrder(request:OrderRequest,now:Date):Promise<Order>}
+import type {Catalog,Order,OrderRequest,OrderStatus} from '../domain/models';
+export interface RestaurantApi {getCatalog(now:Date):Promise<Catalog>;createDemoOrder(request:OrderRequest,now:Date):Promise<Order>;listCounterDemoOrders():Promise<Order[]>;createCounterDemoOrder(now:Date):Promise<Order>;updateCounterDemoOrder(id:string,status:OrderStatus,now:Date,options?:{estimatedMinutes?:number;reason?:string}):Promise<Order>}
 const accepted=new Map<string,{fingerprint:string;order:Order}>();
+const counterOrders:Order[]=[];
+let counterNumber=0;
+const transitions:Record<OrderStatus,OrderStatus[]>={awaiting_acceptance:['accepted','rejected'],accepted:['preparing'],preparing:['ready'],ready:['out_for_delivery','completed'],out_for_delivery:['completed'],completed:[],rejected:[]};
 // No network, email, Supabase connection or durable customer-data storage.
 // Replace this adapter with a Workers HTTP adapter; components keep the same interface.
 export const restaurantApi:RestaurantApi={async getCatalog(now){return demoCatalog(now)},async createDemoOrder(request,now){
@@ -11,4 +14,7 @@ export const restaurantApi:RestaurantApi={async getCatalog(now){return demoCatal
  const order:Order={id:'DEMO-'+crypto.randomUUID().slice(0,8).toUpperCase(),idempotencyKey:request.idempotencyKey,createdAt:now.toISOString(),status:'awaiting_acceptance',items:q.lines.map(l=>({productId:l.product.id,quantity:l.quantity,nameSnapshot:l.product.name,unitPriceSnapshot:l.product.price})),customer:{...request.customer},fulfillment:request.fulfillment,payment:request.payment,subtotal:q.subtotal,deliveryFee:q.deliveryFee,total:q.total,demo:true};
  // Bounded, tab-memory-only idempotency cache. Production must persist this server-side.
  if(accepted.size>=20)accepted.delete(accepted.keys().next().value!);accepted.set(request.idempotencyKey,{fingerprint,order});return order;
-}};
+},async listCounterDemoOrders(){return structuredClone(counterOrders)},async createCounterDemoOrder(now){
+ const n=++counterNumber,delivery=n%2===1,product=demoCatalog(now).products.find(p=>!p.dailyMenuId)!;const quantity=n%3+1,subtotal=product.price*quantity,deliveryFee=delivery?500:0;
+ const order:Order={id:`TESZT-${String(n).padStart(3,'0')}`,idempotencyKey:`counter-demo-${n}`,createdAt:now.toISOString(),status:'awaiting_acceptance',items:[{productId:product.id,quantity,nameSnapshot:product.name,unitPriceSnapshot:product.price}],customer:{fullName:`Teszt Vendég ${n}`,phone:'+36 00 000 0000',email:'teszt@example.invalid',...(delivery?{address:'Mintaváros, Példa utca 1.'}:{}),note:'Kitalált tesztrendelés.'},fulfillment:delivery?'delivery':'pickup',payment:n%2?'cash_on_receipt':'card_on_receipt',subtotal,deliveryFee,total:subtotal+deliveryFee,demo:true,history:[{status:'awaiting_acceptance',at:now.toISOString()}]};counterOrders.unshift(order);return structuredClone(order);
+},async updateCounterDemoOrder(id,status,now,options){const order=counterOrders.find(o=>o.id===id);if(!order)throw Error('A tesztrendelés nem található.');if(!transitions[order.status].includes(status)||status==='out_for_delivery'&&order.fulfillment!=='delivery'||status==='completed'&&order.status==='ready'&&order.fulfillment==='delivery')throw Error('Ez az állapotváltás nem engedélyezett.');if(status==='accepted'&&(!Number.isInteger(options?.estimatedMinutes)||options!.estimatedMinutes!<1||options!.estimatedMinutes!>1440))throw Error('Adj meg 1 és 1440 perc közötti várható időt.');order.status=status;if(status==='accepted')order.estimatedMinutes=options!.estimatedMinutes;order.history!.push({status,at:now.toISOString(),note:status==='rejected'?options?.reason?.trim().slice(0,200)||undefined:undefined});return structuredClone(order)} };
