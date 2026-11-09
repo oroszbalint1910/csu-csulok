@@ -1,12 +1,13 @@
 import assert from 'node:assert/strict';
 import {budapest,menuStatus,weekDates,quote,customerErrors,initialMenuDate} from '../src/domain/ordering';
 import {demoCatalog} from '../src/data/catalog';
-import {restaurantApi} from '../src/api/restaurant';
+import {restaurantApi,demoStore} from '../src/api/restaurant';
 import {createElement} from 'react';
 import {renderToStaticMarkup} from 'react-dom/server';
 import {WeeklyMenuPager} from '../src/components/WeeklyMenuPager';
 import {OrderingFlow} from '../src/components/OrderingFlow';
 import {scrollToSection} from '../src/menuNavigation';
+import {assignCourier,changeDeliveryStatus} from '../src/domain/delivery';
 const monday=new Date('2026-11-09T07:00:00Z');
 const catalog=demoCatalog(monday),day=catalog.weeklyMenu.days[0];
 assert.equal(budapest(monday).hour,8);
@@ -54,7 +55,20 @@ assert.equal(completed.estimatedMinutes,45);assert.equal(completed.history?.leng
 const rejected=await restaurantApi.createCounterDemoOrder(monday);
 const closed=await restaurantApi.updateCounterDemoOrder(rejected.id,'rejected',monday,{reason:'Teszt indok'});
 assert.equal(closed.history?.at(-1)?.note,'Teszt indok');
-assert.ok(!(await restaurantApi.listCounterDemoOrders()).some(o=>o.id===first.id));
+assert.ok((await restaurantApi.listCounterDemoOrders()).some(o=>o.id===first.id));
+const courier={id:'courier-1',name:'Demó futár',active:true};
+const assignment=assignCourier(counter,courier);
+assert.throws(()=>assignCourier(counter,{...courier,active:false}));
+assert.throws(()=>assignCourier(rejected,courier));
+assert.throws(()=>changeDeliveryStatus(assignment,'other','delivering'));
+assert.throws(()=>changeDeliveryStatus(assignment,courier.id,'delivered'));
+const delivering=changeDeliveryStatus(assignment,courier.id,'delivering');
+const delivered=changeDeliveryStatus(delivering,courier.id,'delivered');
+assert.throws(()=>assignCourier(counter,courier,delivered));
+assert.equal(delivered.status,'delivered');
+const shared=demoStore.read();shared.catalog=demoCatalog(monday);shared.catalog.products.find(p=>!p.dailyMenuId)!.price=4321;demoStore.save(shared);
+assert.equal((await restaurantApi.getCatalog(monday)).products.find(p=>!p.dailyMenuId)?.price,4321);
+const assigned=await restaurantApi.createCounterDemoOrder(monday);if(assigned.fulfillment==='delivery'){demoStore.assign(assigned.id,'courier-1');assert.equal(demoStore.read().assignments.find(a=>a.orderId===assigned.id)?.courierId,'courier-1')}
 console.log('Counter demo assertions passed: transitions, required time, history and data separation.');
 console.log('30 domain assertions passed, including compact weekly-menu initial selection.');
 const pager=renderToStaticMarkup(createElement(WeeklyMenuPager,{days:catalog.weeklyMenu.days,now:monday,renderDay:d=>createElement('article',null,d.soup)}));
