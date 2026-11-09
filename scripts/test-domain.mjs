@@ -6,5 +6,5 @@ const require=createRequire(import.meta.url);
 const viteDirectory=path.dirname(require.resolve('vite/package.json'));
 const esbuild=await import(pathToFileURL(require.resolve('esbuild',{paths:[viteDirectory]})));
 const output=path.resolve('.sites-runtime/domain-tests.mjs');
-await esbuild.build({entryPoints:['tests/ordering.test.ts'],bundle:true,platform:'node',format:'esm',outfile:output});
+await esbuild.build({entryPoints:['tests/ordering.test.ts'],bundle:true,packages:'external',platform:'node',format:'esm',outfile:output});
 await import(pathToFileURL(output));

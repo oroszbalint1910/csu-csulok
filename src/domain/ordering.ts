@@ -2,6 +2,7 @@ import type { Catalog,CartItem,CustomerDetails,DailyMenu,DeliveryZone,Fulfillmen
 export function budapest(now:Date){const p=new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Budapest',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(now);const get=(t:string)=>p.find(x=>x.type===t)!.value;return {date:`${get('year')}-${get('month')}-${get('day')}`,hour:Number(get('hour')),minute:Number(get('minute'))}}
 export function weekDates(now:Date){const {date}=budapest(now);const d=new Date(date+'T12:00:00Z');const delta=(d.getUTCDay()+6)%7;d.setUTCDate(d.getUTCDate()-delta);return Array.from({length:5},(_,i)=>{const day=new Date(d);day.setUTCDate(day.getUTCDate()+i);return day.toISOString().slice(0,10)})}
 export function menuStatus(day:DailyMenu,now:Date):'available'|'closed'|'upcoming'{const t=budapest(now);if(day.date<t.date||(day.date===t.date&&t.hour>=14))return 'closed';if(day.date>t.date||t.hour<8)return 'upcoming';return 'available'}
+export function initialMenuDate(days:DailyMenu[],now:Date){const date=budapest(now).date;return (days.find(d=>d.date===date)||days.find(d=>d.date>date)||days.at(-1))?.date||''}
 export function validateQuantity(q:number){return Number.isInteger(q)&&q>=1&&q<=99}
 export function quote(items:CartItem[],catalog:Catalog,now:Date,fulfillment:Fulfillment,zoneId?:string){
  const errors:string[]=[];const seen=new Set<string>();

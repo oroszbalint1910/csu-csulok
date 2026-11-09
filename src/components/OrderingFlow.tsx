@@ -5,7 +5,7 @@ import {restaurantApi} from '../api/restaurant';
 import type {Catalog,CartItem,CustomerDetails,Fulfillment,PaymentMethod,Order} from '../domain/models';
 const money=(n:number)=>new Intl.NumberFormat('hu-HU').format(n)+' Ft';
 export function OrderingFlow({catalog,items,now,update,clear,onClose}:{catalog:Catalog;items:CartItem[];now:Date;update:(id:string,delta:number)=>void;clear:()=>void;onClose:()=>void}){
- const [step,setStep]=useState(1),[fulfillment,setFulfillment]=useState<Fulfillment>('pickup'),[payment,setPayment]=useState<PaymentMethod>('cash_on_receipt'),[customer,setCustomer]=useState<CustomerDetails>({fullName:'',phone:'',email:''}),[error,setError]=useState(''),[busy,setBusy]=useState(false),[order,setOrder]=useState<Order|null>(null);const sending=useRef(false),key=useRef(crypto.randomUUID());
+ const [step,setStep]=useState(1),[fulfillment,setFulfillment]=useState<Fulfillment>('delivery'),[payment,setPayment]=useState<PaymentMethod>('cash_on_receipt'),[customer,setCustomer]=useState<CustomerDetails>({fullName:'',phone:'',email:''}),[error,setError]=useState(''),[busy,setBusy]=useState(false),[order,setOrder]=useState<Order|null>(null);const sending=useRef(false),key=useRef(crypto.randomUUID());
  const q=quote(items,catalog,now,fulfillment,customer.zoneId);
  const field=(name:keyof CustomerDetails,value:string)=>setCustomer(c=>({...c,[name]:value}));
  function next(e:FormEvent){e.preventDefault();const errors=step===2?customerErrors(customer,fulfillment):[];if(q.errors.length||errors.length){setError([...q.errors,...errors].join(' '));return}setError('');setStep(s=>s+1)}
