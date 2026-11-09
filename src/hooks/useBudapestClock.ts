@@ -1,0 +1,2 @@
+import {useEffect,useState} from 'react';
+export function useBudapestClock(){const [now,setNow]=useState(()=>new Date());useEffect(()=>{const tick=()=>setNow(new Date());const id=setInterval(tick,1000);const visible=()=>{if(document.visibilityState==='visible')tick()};window.addEventListener('focus',tick);document.addEventListener('visibilitychange',visible);return()=>{clearInterval(id);window.removeEventListener('focus',tick);document.removeEventListener('visibilitychange',visible)}},[]);return now}

@@ -6,7 +6,7 @@ A csomag a változatlan dizájnú és funkciójú éttermi frontend teljes forr�
 
 1. A GitHubon hozz létre egy **Public** repositoryt, például `csu-csulok` néven, `main` alapértelmezett ággal.
 2. Csomagold ki a mellékelt ZIP-et. A tartalmát tedd a repository gyökerébe: a `package.json`, `vite.config.ts`, `src`, `public`, `pnpm-lock.yaml`, `pnpm-workspace.yaml` és a többi mellékelt konfiguráció közvetlenül ott legyen. Ne egy további almappába töltsd fel.
-3. A **.github/workflows/deploy-pages.yml** fájl is kerüljön fel. Ponttal kezdődő mappa, egyes fájlkezelők elrejthetik. Ha a böngészős feltöltés kihagyja, GitHub **Add file → Create new file** segítségével hozd létre ezen a pontos útvonalon, a mellékelt fájl tartalmával.
+3. A **.github/workflows/deploy.yml** fájl is kerüljön fel. Ponttal kezdődő mappa, egyes fájlkezelők elrejthetik. Ha a böngészős feltöltés kihagyja, GitHub **Add file → Create new file** segítségével hozd létre ezen a pontos útvonalon, a mellékelt fájl tartalmával.
 4. Nyisd meg a repository **Settings → Pages** lapját. A **Build and deployment → Source** mezőben válaszd a **GitHub Actions** lehetőséget.
 5. Az **Actions** lapon válaszd a **Deploy to GitHub Pages** workflow-t, majd **Run workflow → main → Run workflow**. Ez akkor is szükséges lehet, ha az első automatikus futás még a Pages aktiválása előtt indult.
 6. Várd meg a `build` és `deploy` job zöld állapotát. A kész link a futás `github-pages` környezeténél és a **Settings → Pages** lapon jelenik meg.
