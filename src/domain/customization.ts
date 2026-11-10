@@ -1,0 +1,10 @@
+import type {CartItem,Product} from './models';
+export interface Choice {id:string;label:string;price:number}
+export interface ChoiceGroup {label:string;choices:Choice[];multiple:boolean}
+const sizes:ChoiceGroup={label:'Pizzaméret',multiple:false,choices:[{id:'size-normal',label:'Normál (32 cm)',price:0},{id:'size-large',label:'Nagy (40 cm)',price:900}]};
+const toppings:ChoiceGroup={label:'Extra feltétek',multiple:true,choices:[{id:'extra-cheese',label:'Extra sajt',price:350},{id:'extra-ham',label:'Sonka',price:400},{id:'extra-mushroom',label:'Gomba',price:300}]};
+const sauces:ChoiceGroup={label:'Szósz',multiple:false,choices:[{id:'sauce-none',label:'Nem kérek',price:0},{id:'sauce-garlic',label:'Fokhagymás szósz',price:250},{id:'sauce-spicy',label:'Csípős szósz',price:250}]};
+const sides:ChoiceGroup={label:'Köret',multiple:false,choices:[{id:'side-none',label:'Nem kérek',price:0},{id:'side-fries',label:'Sült burgonya',price:600},{id:'side-rice',label:'Párolt rizs',price:550}]};
+export function groupsFor(product:Product):ChoiceGroup[]{if(product.categoryId==='pizza')return [sizes,toppings,sauces];if(product.categoryId==='burger'||product.categoryId==='gyros')return [sauces,sides];if(product.categoryId==='carte')return [sides,sauces];return []}
+export function cartKey(item:Pick<CartItem,'productId'|'options'>){return JSON.stringify([item.productId,[...(item.options||[])].sort()])}
+export function resolveOptions(product:Product,ids:string[]|undefined){const groups=groupsFor(product),selected=ids||[];if(!Array.isArray(selected)||selected.some(x=>typeof x!=='string')||new Set(selected).size!==selected.length)throw Error('Érvénytelen választás.');const all=groups.flatMap(g=>g.choices);if(selected.some(id=>!all.some(c=>c.id===id)))throw Error('Ismeretlen vagy nem választható extra.');for(const g of groups){const n=selected.filter(id=>g.choices.some(c=>c.id===id)).length;if(!g.multiple&&n>1)throw Error('Egy csoportból csak egy lehetőség választható.')}return selected.map(id=>all.find(c=>c.id===id)!)}
