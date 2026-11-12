@@ -1,3 +1,4 @@
+import {scheduleErrors} from '../domain/scheduling';
 import {demoCatalog} from '../data/catalog';
 import {quote,requestErrors} from '../domain/ordering';
 import {assignCourier,changeDeliveryStatus,type DemoCourier,type DemoAssignment,type DeliveryStatus} from '../domain/delivery';
@@ -16,8 +17,8 @@ const transitions:Record<OrderStatus,OrderStatus[]>={awaiting_acceptance:['accep
 // Replace this adapter with a Workers HTTP adapter; components keep the same interface.
 export const restaurantApi:RestaurantApi={async getCatalog(now){return demoStore.catalog(now)},async createDemoOrder(request,now){
  const fingerprint=JSON.stringify(request);const previous=accepted.get(request.idempotencyKey);if(previous){if(previous.fingerprint!==fingerprint)throw Error('A beküldési azonosító más tartalomhoz tartozik.');return previous.order}
- const q=quote(request.items,demoStore.catalog(now),now,request.fulfillment,request.customer.zoneId);const errors=[...requestErrors(request),...q.errors];if(errors.length)throw Error(errors.join(' '));
- const order:Order={id:'DEMO-'+crypto.randomUUID().slice(0,8).toUpperCase(),idempotencyKey:request.idempotencyKey,createdAt:now.toISOString(),status:'awaiting_acceptance',items:q.lines.map(l=>({productId:l.product.id,quantity:l.quantity,nameSnapshot:l.product.name,unitPriceSnapshot:l.unitPrice,optionsSnapshot:l.choices.map(c=>c.label)})),customer:{...request.customer},fulfillment:request.fulfillment,payment:request.payment,subtotal:q.subtotal,deliveryFee:q.deliveryFee,total:q.total,demo:true};
+ const q=quote(request.items,demoStore.catalog(now),now,request.fulfillment,request.customer.zoneId);const errors=[...requestErrors(request),...q.errors,...scheduleErrors(request,demoStore.catalog(now),now)];if(errors.length)throw Error(errors.join(' '));
+ const order:Order={id:'DEMO-'+crypto.randomUUID().slice(0,8).toUpperCase(),idempotencyKey:request.idempotencyKey,createdAt:now.toISOString(),scheduledTime:request.scheduledTime,status:'awaiting_acceptance',items:q.lines.map(l=>({productId:l.product.id,quantity:l.quantity,nameSnapshot:l.product.name,unitPriceSnapshot:l.unitPrice,optionsSnapshot:l.choices.map(c=>c.label)})),customer:{...request.customer},fulfillment:request.fulfillment,payment:request.payment,subtotal:q.subtotal,deliveryFee:q.deliveryFee,total:q.total,demo:true};
  // Bounded, tab-memory-only idempotency cache. Production must persist this server-side.
  if(accepted.size>=20)accepted.delete(accepted.keys().next().value!);accepted.set(request.idempotencyKey,{fingerprint,order});const state=read();state.orders.unshift(order);save(state);return order;
 },async listCounterDemoOrders(){return structuredClone(read().orders)},async createCounterDemoOrder(now){
