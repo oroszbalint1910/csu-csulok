@@ -14,6 +14,6 @@ export type PaymentMethod='cash_on_receipt'|'card_on_receipt';
 export interface OrderHistoryEntry {status:OrderStatus;at:string;note?:string}
 export interface OrderItem {productId:string;quantity:number;nameSnapshot:string;unitPriceSnapshot:Money;optionsSnapshot?:string[]}
 export interface Order {id:string;idempotencyKey:string;createdAt:string;status:OrderStatus;items:OrderItem[];customer:CustomerDetails;fulfillment:Fulfillment;payment:PaymentMethod;subtotal:Money;deliveryFee:Money;total:Money;demo:true;history?:OrderHistoryEntry[];estimatedMinutes?:number;scheduledTime?:string}
-export interface RestaurantSettings {name:string;timezone:'Europe/Budapest';menuStartHour:number;menuEndHour:number;address?:string;phone?:string;openingHours?:string;orderingMode:'demo';closingTime?:string}
+export interface RestaurantSettings {name:string;timezone:'Europe/Budapest';menuStartHour:number;menuEndHour:number;address?:string;phone?:string;openingHours?:string;orderingMode:'demo';closingTime?:string;deliveryEnabled?:boolean}
 export interface Catalog {optionGroups?:ChoiceGroup[];categories:Category[];products:Product[];weeklyMenu:WeeklyMenu;zones:DeliveryZone[];settings:RestaurantSettings}
 export interface OrderRequest {scheduledTime?:string;items:CartItem[];customer:CustomerDetails;fulfillment:Fulfillment;payment:PaymentMethod;idempotencyKey:string}
